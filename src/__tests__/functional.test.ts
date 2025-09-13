@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test";
 import {
-  from,
-  fromAsync,
+  fromNullable,
+  fromPromise,
   map,
   flatMap,
   filterMap,
@@ -10,182 +10,190 @@ import {
 import { Maybe } from "../Maybe";
 import { AsyncMaybe } from "../AsyncMaybe";
 
-describe("functional", () => {
-  describe("from", () => {
+describe("functional interface", () => {
+  describe("fromNullable", () => {
     test("wraps a value in a Maybe instance", () => {
-      const maybe = from(42);
+      const maybe = fromNullable(42);
       expect(maybe).toBeInstanceOf(Maybe);
+      expect(maybe.value()).toBe(42);
+    });
+
+    test("wraps null in a Maybe as Nothing", () => {
+      const maybe = fromNullable<number>(null);
+      expect(maybe.value()).toBeNull();
     });
   });
 
-  describe("of", () => {
-    test("wraps a Just value in a Maybe instance", () => {
-      const maybe = from(42);
-      expect(maybe).toBeInstanceOf(Maybe);
-      expect(maybe.value()).toBe(42);
+  describe("fromPromise", () => {
+    test("wraps a Promise value in an AsyncMaybe instance", async () => {
+      const asyncMaybe = fromPromise(Promise.resolve(42));
+      expect(asyncMaybe).toBeInstanceOf(AsyncMaybe);
+      expect(await asyncMaybe.value()).toBe(42);
+    });
+
+    test("wraps Promise<null> as AsyncMaybe Nothing", async () => {
+      const asyncMaybe = fromPromise<number | null>(Promise.resolve(null));
+      expect(await asyncMaybe.value()).toBeNull();
     });
   });
 
   describe("map", () => {
-    test("applies the map function to the Just value", () => {
-      const maybe = from(5);
+    test("maps over a Maybe", () => {
+      const maybe = fromNullable(5);
       const mapped = map((x: number) => x * 2)(maybe);
       expect(mapped.value()).toBe(10);
     });
 
-    test("returns Nothing when mapping over Nothing", () => {
-      const maybe = from<number>(null);
+    test("returns Nothing when mapping over Nothing (Maybe)", () => {
+      const maybe = fromNullable<number>(null);
       const mapped = map((x: number) => x * 2)(maybe);
       expect(mapped.value()).toBeNull();
     });
 
-    test("maps over an AsyncMaybe", () => {
-      const maybe = fromAsync(Promise.resolve(5));
-      const mapped = map((x: number) => x * 2)(maybe);
-      expect(mapped.value()).resolves.toEqual(10);
+    test("maps over an AsyncMaybe", async () => {
+      const asyncMaybe = fromPromise(Promise.resolve(5));
+      const mapped = map((x: number) => x * 2)(asyncMaybe);
+      expect(await mapped.value()).toBe(10);
+    });
+
+    test("returns Nothing when mapping over Nothing (AsyncMaybe)", async () => {
+      const asyncMaybe = fromPromise<number>(Promise.resolve(null));
+      const mapped = map((x: number) => x * 2)(asyncMaybe);
+      expect(await mapped.value()).toBeNull();
     });
   });
 
   describe("flatMap", () => {
-    test("composes monadic functions", () => {
-      const maybe = from(5);
-      const flatMapped = flatMap((x: number) => from(x * 3))(maybe);
+    test("flatMaps over a Maybe", () => {
+      const maybe = fromNullable(5);
+      const flatMapped = flatMap((x: number) => fromNullable(x * 3))(maybe);
       expect(flatMapped.value()).toBe(15);
     });
 
-    test("returns Nothing when flatMapping over Nothing", () => {
-      const maybe = from<number>(undefined);
-      const flatMapped = flatMap((x: number) => from(x * 3))(maybe);
-      expect(flatMapped.value()).toBeUndefined();
+    test("returns Nothing when flatMapping over Nothing (Maybe)", () => {
+      const maybe = fromNullable<number>(null);
+      const flatMapped = flatMap((x: number) => fromNullable(x * 3))(maybe);
+      expect(flatMapped.value()).toBeNull();
     });
 
-    test("flatMaps over an AsyncMaybe", () => {
-      const maybe = fromAsync(Promise.resolve(5));
+    test("flatMaps over an AsyncMaybe", async () => {
+      const asyncMaybe = fromPromise(Promise.resolve(5));
       const flatMapped = flatMap((x: number) =>
-        fromAsync(Promise.resolve(x * 3)),
-      )(maybe);
-      expect(flatMapped.value()).resolves.toEqual(15);
+        fromPromise(Promise.resolve(x * 3)),
+      )(asyncMaybe);
+      expect(await flatMapped.value()).toBe(15);
     });
 
-    test("flatMaps over an AsyncMaybe where the return of the map fn is a Maybe instance and yields an AsyncMaybe", () => {
-      const maybe = fromAsync(Promise.resolve(5));
-      const flatMapped = flatMap((x: number) => from(x * 3))(maybe);
-      expect(flatMapped.value()).resolves.toEqual(15);
+    test("flatMaps AsyncMaybe with a Maybe-returning function", async () => {
+      const asyncMaybe = fromPromise(Promise.resolve(5));
+      const flatMapped = flatMap((x: number) => fromNullable(x * 3))(
+        asyncMaybe,
+      );
+      expect(await flatMapped.value()).toBe(15);
     });
 
-    test("lifts a Maybe to AsyncMaybe", () => {
-      const maybe = from(5);
+    test("lifts Maybe to AsyncMaybe when the fn returns AsyncMaybe", async () => {
+      const maybe = fromNullable(5);
       const flatMapped = flatMap((x: number) =>
-        fromAsync(Promise.resolve(x * 3)),
+        fromPromise(Promise.resolve(x * 3)),
       )(maybe);
       expect(flatMapped).toBeInstanceOf(AsyncMaybe);
+      expect(await flatMapped.value()).toBe(15);
     });
   });
 
   describe("filterMap", () => {
-    test("maps and filters an array of values", () => {
-      const maybe = from([1, 2, 3, 4, 5]);
+    test("maps and filters an array (Maybe)", () => {
+      const maybe = fromNullable([1, 2, 3, 4, 5]);
       const filterMapped = filterMap((x: number) =>
-        from(x % 2 === 0 ? x * 10 : null),
+        fromNullable(x % 2 === 0 ? x * 10 : null),
       )(maybe);
       expect(filterMapped.value()).toEqual([20, 40]);
     });
 
-    test("returns Nothing when filtering over Nothing", () => {
-      const maybe = from<number[]>(null);
+    test("returns Nothing when filtering over Nothing (Maybe)", () => {
+      const maybe = fromNullable<number[]>(null);
       const filterMapped = filterMap((x: number) =>
-        from(x % 2 === 0 ? x * 10 : null),
+        fromNullable(x % 2 === 0 ? x * 10 : null),
       )(maybe);
       expect(filterMapped.value()).toBeNull();
     });
 
-    test("filterMaps over an AsyncMaybe", () => {
-      const maybe = fromAsync(Promise.resolve([1, 2, 3, 4, 5]));
+    test("filterMaps over an AsyncMaybe", async () => {
+      const asyncMaybe = fromPromise(Promise.resolve([1, 2, 3, 4, 5]));
       const filterMapped = filterMap((x: number) =>
-        fromAsync(Promise.resolve(x % 2 === 0 ? x * 10 : null)),
-      )(maybe);
-      expect(filterMapped.value()).resolves.toEqual([20, 40]);
+        fromPromise(Promise.resolve(x % 2 === 0 ? x * 10 : null)),
+      )(asyncMaybe);
+      expect(await filterMapped.value()).toEqual([20, 40]);
     });
 
-    test("filterMaps over an AsyncMaybe where the map fn returns a Maybe instance", () => {
-      const maybe = fromAsync(Promise.resolve([1, 2, 3, 4, 5]));
+    test("filterMaps AsyncMaybe with Maybe-returning fn", async () => {
+      const asyncMaybe = fromPromise(Promise.resolve([1, 2, 3, 4, 5]));
       const filterMapped = filterMap((x: number) =>
-        from(x % 2 === 0 ? x * 10 : null),
+        fromNullable(x % 2 === 0 ? x * 10 : null),
+      )(asyncMaybe);
+      expect(await filterMapped.value()).toEqual([20, 40]);
+    });
+
+    test("returns Nothing if the map fn of a Maybe returns an AsyncMaybe", () => {
+      const maybe = fromNullable([1, 2, 3, 4, 5]);
+      const filterMapped = filterMap((x: number) =>
+        fromPromise(Promise.resolve(x % 2 === 0 ? x * 10 : null)),
       )(maybe);
-      expect(filterMapped.value()).resolves.toEqual([20, 40]);
-    });
-
-    test("returns undefined if the value is not an Array", () => {
-      const maybe = fromAsync(Promise.resolve(42));
-      // @ts-expect-error
-      const filterMapped = filterMap((x: number) => from(x * 10))(maybe);
-      // @ts-expect-error
-      expect(filterMapped.value()).resolves.toBeUndefined();
-    });
-
-    test("fails if the map fn over a Maybe returns an AsyncMaybe", () => {
-      const maybe = from([1, 2, 3, 4, 5]);
-      expect(() =>
-        filterMap((x: number) =>
-          fromAsync(Promise.resolve(x % 2 === 0 ? x * 10 : null)),
-        )(
-          // @ts-expect-error
-          maybe,
-        ),
-      ).toThrow();
+      expect(filterMapped.value()).toBeNull();
     });
   });
 
   describe("extend", () => {
-    test("chains dependent computations on object properties", () => {
-      const maybe = from({ num: 3 });
+    test("extends an object inside a Maybe", () => {
+      const maybe = fromNullable({ num: 3 });
       const extended = extend("greet", (o: { num: number }) =>
-        from(`Hello ${o.num}`),
+        fromNullable(`Hello ${o.num}`),
       )(maybe);
       expect(extended.value()).toEqual({ num: 3, greet: "Hello 3" });
     });
 
-    test("short circuits if the Just value is not an object", () => {
-      const maybe = from(5);
-      const extended = extend("greet", (o) => from(`Hello ${o}`))(
-        // @ts-expect-error
+    test("short circuits if the Just value is not an object (Maybe)", () => {
+      const maybe = fromNullable(5);
+      const extended = extend("greet", (o) => fromNullable(`Hello ${o}`))(
+        // @ts-expect-error not an object
         maybe,
       );
-
-      expect(extended.value()).toBeUndefined();
+      // @ts-expect-error
+      expect(extended.value()).toBeNull();
     });
 
-    test("short circuits if the function returns Nothing", () => {
-      const maybe = from({ num: 2 });
-      const extended = extend("greet", (o: { num: number }) =>
-        from<string>(undefined),
+    test("short circuits if the fn returns Nothing (Maybe)", () => {
+      const maybe = fromNullable({ num: 2 });
+      const extended = extend("greet", (_o: { num: number }) =>
+        fromNullable<string>(null),
       )(maybe);
-      expect(extended.value()).toBeUndefined();
+      expect(extended.value()).toBeNull();
     });
 
-    test("works with AsyncMaybe", () => {
-      const maybe = fromAsync(Promise.resolve({ num: 3 }));
+    test("extends an object inside an AsyncMaybe", async () => {
+      const asyncMaybe = fromPromise(Promise.resolve({ num: 3 }));
       const extended = extend("greet", (o: { num: number }) =>
-        fromAsync(Promise.resolve(`Hello ${o.num}`)),
-      )(maybe);
-      expect(extended.value()).resolves.toEqual({ num: 3, greet: "Hello 3" });
+        fromPromise(Promise.resolve(`Hello ${o.num}`)),
+      )(asyncMaybe);
+      expect(await extended.value()).toEqual({ num: 3, greet: "Hello 3" });
     });
 
-    test("works with AsyncMaybe where the map fn returns a Maybe instance", () => {
-      const maybe = fromAsync(Promise.resolve({ num: 3 }));
+    test("works with AsyncMaybe where fn returns a Maybe", async () => {
+      const asyncMaybe = fromPromise(Promise.resolve({ num: 3 }));
       const extended = extend("greet", (o: { num: number }) =>
-        from(`Hello ${o.num}`),
-      )(maybe);
-      expect(extended.value()).resolves.toEqual({ num: 3, greet: "Hello 3" });
+        fromNullable(`Hello ${o.num}`),
+      )(asyncMaybe);
+      expect(await extended.value()).toEqual({ num: 3, greet: "Hello 3" });
     });
 
-    test("lifts Maybe to AsyncMaybe when the map fn of a Maybe returns an AsyncMaybe", () => {
-      const maybe = from({ num: 3 });
+    test("lifts Maybe to AsyncMaybe when fn returns AsyncMaybe", async () => {
+      const maybe = fromNullable({ num: 3 });
       const extended = extend("greet", (o: { num: number }) =>
-        fromAsync(Promise.resolve(`Hello ${o.num}`)),
+        fromPromise(Promise.resolve(`Hello ${o.num}`)),
       )(maybe);
       expect(extended).toBeInstanceOf(AsyncMaybe);
-      expect(extended.value()).resolves.toEqual({ num: 3, greet: "Hello 3" });
+      expect(await extended.value()).toEqual({ num: 3, greet: "Hello 3" });
     });
   });
 });
