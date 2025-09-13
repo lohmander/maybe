@@ -167,6 +167,62 @@ export class AsyncMaybe<T> {
   }
 
   /**
+   * Assign one or more properties to an object inside an AsyncMaybe.
+   * Runs all property functions in parallel and short-circuits to Nothing if:
+   * - the AsyncMaybe is Nothing
+   * - the value is not an object
+   * - any property function returns Nothing
+   *
+   * @param fns - An object where keys are property names and values are functions
+   *              returning a Maybe or AsyncMaybe of the property value.
+   * @returns An AsyncMaybe of the extended object, or Nothing if short-circuited.
+   */
+  assign<
+    Exts extends Record<
+      string,
+      (
+        value: T,
+      ) => Maybe<any> | AsyncMaybe<any> | Promise<Maybe<any> | AsyncMaybe<any>>
+    >,
+  >(
+    fns: Exts,
+  ): AsyncMaybe<
+    T & {
+      [K in keyof Exts]: Exts[K] extends (value: T) => Maybe<infer U>
+        ? U
+        : Exts[K] extends (value: T) => AsyncMaybe<infer U>
+          ? U
+          : Exts[K] extends (
+                value: T,
+              ) => Promise<Maybe<infer U> | AsyncMaybe<infer U>>
+            ? U
+            : never;
+    }
+  > {
+    return this.flatMap((obj) => {
+      if (typeof obj !== "object" || obj === null) {
+        return AsyncMaybe.fromNullable(null);
+      }
+
+      // Run all extenders in parallel
+      const tasks = Object.entries(fns).map(async ([key, fn]) => {
+        const res = await Promise.resolve(fn(obj)).then((res) => res.value());
+        return [key, res] as const;
+      });
+
+      return AsyncMaybe.fromPromise(
+        Promise.all(tasks).then((resolved) => {
+          // Short-circuit: if any extender is Nothing, bail out
+          if (resolved.some(([, v]) => isNothing(v))) {
+            return null;
+          }
+          return { ...obj, ...Object.fromEntries(resolved) };
+        }),
+      );
+    }) as any;
+  }
+
+  /**
    * filterMap - Maps and filters an array inside an AsyncMaybe.
    *
    * Semantics:

@@ -171,6 +171,105 @@ describe("AsyncMaybe", () => {
     });
   });
 
+  describe("assign", () => {
+    it("assigns a single property", async () => {
+      const user = AsyncMaybe.fromNullable({ id: 1, name: "Alice" });
+
+      const result = user.assign({
+        profile: (u) => Maybe.fromNullable(u.name?.toUpperCase()),
+      });
+
+      expect(await result.value()).toEqual({
+        id: 1,
+        name: "Alice",
+        profile: "ALICE",
+      });
+    });
+
+    it("assigns multiple properties in parallel", async () => {
+      const user = AsyncMaybe.fromNullable({ id: 2, name: "Bob" });
+
+      const result = user.assign({
+        profile: (u) => Maybe.fromNullable(u.name?.toUpperCase()),
+        settings: () => AsyncMaybe.fromNullable("dark"),
+      });
+
+      expect(await result.value()).toEqual({
+        id: 2,
+        name: "Bob",
+        profile: "BOB",
+        settings: "dark",
+      });
+    });
+
+    it("short-circuits to Nothing if the AsyncMaybe is Nothing", async () => {
+      const user = AsyncMaybe.fromNullable<{ id: number; name: string }>(null);
+
+      const result = user.assign({
+        profile: (u) => Maybe.fromNullable(u.name.toUpperCase()),
+      });
+
+      expect(await result.value()).toBeNull();
+    });
+
+    it("short-circuits to Nothing if the inner value is not an object", async () => {
+      const notObj = AsyncMaybe.fromNullable(42);
+
+      const result = notObj.assign({
+        profile: () => Maybe.fromNullable("oops"),
+      });
+
+      expect(await result.value()).toBeNull();
+    });
+
+    it("short-circuits to Nothing if any property function returns Nothing", async () => {
+      const user = AsyncMaybe.fromNullable({ id: 3, name: "Charlie" });
+
+      const result = user.assign({
+        profile: () => Maybe.fromNullable(null), // Nothing
+        settings: () => AsyncMaybe.fromNullable("light"),
+      });
+
+      expect(await result.value()).toBeNull();
+    });
+
+    it("runs all property functions concurrently", async () => {
+      const user = AsyncMaybe.fromNullable({ id: 4 });
+
+      let ranFirst = false;
+      let ranSecond = false;
+
+      const result = user.assign({
+        first: async () => {
+          await new Promise((r) => setTimeout(r, 50));
+          ranFirst = true;
+          return Maybe.fromNullable("one" as const);
+        },
+        second: async () => {
+          ranSecond = true;
+          return AsyncMaybe.fromNullable("two");
+        },
+      });
+
+      const value = await result.value();
+
+      expect(ranFirst && ranSecond).toBeTrue();
+      expect(value).toEqual({ id: 4, first: "one", second: "two" });
+    });
+
+    it("allows chaining with map after assign", async () => {
+      const user = AsyncMaybe.fromNullable({ id: 5, name: "Diana" });
+
+      const result = user
+        .assign({
+          profile: (u) => Maybe.fromNullable(u.name?.toUpperCase()),
+        })
+        .map((u) => u.profile + "!");
+
+      expect(await result.value()).toBe("DIANA!");
+    });
+  });
+
   describe("withDefault / getOrElse", () => {
     it("withDefault supplies a value if Nothing", async () => {
       const absent = AsyncMaybe.fromPromise<number | null>(
