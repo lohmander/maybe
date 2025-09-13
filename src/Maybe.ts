@@ -149,25 +149,15 @@ export class Maybe<T> {
       return new Maybe<any>(null);
     }
 
-    return this.flatMap((obj) => {
-      const props: Record<string, any> = {};
+    const obj = this._value as T;
 
-      for (const [key, fn] of Object.entries(fns)) {
-        const res = fn(obj);
-
-        if (!(res instanceof Maybe)) {
-          return new Maybe<any>(null); // invalid return, treat as Nothing
-        }
-
-        if (isNothing(res.value())) {
-          return new Maybe<any>(null); // short-circuit: whole result is Nothing
-        }
-
-        props[key] = res.value();
-      }
-
-      return new Maybe<any>({ ...(obj as any), ...props });
-    });
+    return Object.entries(fns).reduce(
+      (acc, [k, fn]) =>
+        acc.flatMap((lastVal: any) =>
+          fn(obj).map((v: any) => ({ ...lastVal, [k]: v })),
+        ),
+      new Maybe(obj),
+    );
   }
 
   /**

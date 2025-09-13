@@ -6,6 +6,7 @@ import {
   flatMap,
   filterMap,
   extend,
+  assign,
 } from "../functional";
 import { Maybe } from "../Maybe";
 import { AsyncMaybe } from "../AsyncMaybe";
@@ -193,6 +194,90 @@ describe("functional interface", () => {
       )(maybe);
       expect(extended).toBeInstanceOf(AsyncMaybe);
       expect(await extended.value()).toEqual({ num: 3, greet: "Hello 3" });
+    });
+  });
+
+  describe("assign", () => {
+    test("assigns new properties with Maybe extenders", () => {
+      const user = fromNullable({ id: 1, name: "Alice" });
+      const assigned = assign({
+        // @ts-expect-error
+        profile: (u: { name: string }) => fromNullable(u.name),
+      })(user);
+
+      expect(assigned).toBeInstanceOf(Maybe);
+      expect(assigned.value()).toEqual({
+        id: 1,
+        name: "Alice",
+        profile: "Alice",
+      });
+    });
+
+    test("short-circuits to Nothing if a property is Nothing", () => {
+      const user = fromNullable({ id: 2, name: null });
+      const assigned = assign({
+        // @ts-expect-error
+        profile: (u: { name: string | null }) => fromNullable(u.name),
+      })(user);
+
+      expect(assigned).toBeInstanceOf(Maybe);
+      expect(assigned.value()).toBeNull();
+    });
+
+    test("assigns new properties with AsyncMaybe extenders", async () => {
+      const user = fromNullable({ id: 3, name: "Bob" });
+      const map = {
+        profile: (u: { name: string }) =>
+          fromPromise(Promise.resolve(`Hello ${u.name}`)),
+      };
+      // @ts-expect-error
+      const assigned = assign(map)(user);
+
+      expect(assigned).toBeInstanceOf(AsyncMaybe);
+
+      expect(assigned.value()).resolves.toEqual({
+        id: 3,
+        name: "Bob",
+        profile: "Hello Bob",
+      });
+    });
+
+    test("short-circuits to Nothing if an async property is Nothing", async () => {
+      const user = fromNullable({ id: 4, name: null });
+      const assigned = assign({
+        // @ts-expect-error
+        profile: (u: { name: string | null }) =>
+          fromPromise(Promise.resolve(null)),
+      })(user);
+
+      expect(assigned).toBeInstanceOf(AsyncMaybe);
+      expect(assigned.value()).resolves.toBeNull();
+    });
+
+    test("mixes Maybe and AsyncMaybe extenders and promotes to AsyncMaybe", async () => {
+      const user = fromNullable({ id: 5, name: "Charlie" });
+      const assigned = assign({
+        // @ts-expect-error
+        profile: (u: { name: string }) => fromNullable(u.name),
+        settings: () => fromPromise(Promise.resolve("dark")),
+      })(user);
+
+      expect(assigned).toBeInstanceOf(AsyncMaybe);
+      expect(assigned.value()).resolves.toEqual({
+        id: 5,
+        name: "Charlie",
+        profile: "Charlie",
+        settings: "dark",
+      });
+    });
+
+    test("short-circuits when input is Nothing", () => {
+      const user = fromNullable<object>(null);
+      const assigned = assign({
+        profile: () => fromNullable("nope"),
+      })(user);
+
+      expect(assigned.value()).toBeNull();
     });
   });
 });
