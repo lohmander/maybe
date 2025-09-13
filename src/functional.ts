@@ -192,7 +192,12 @@ export function assign<
 >;
 export function assign<
   A extends object,
-  Exts extends Record<string, (value: A) => Maybe<any> | AsyncMaybe<any>>,
+  Exts extends Record<
+    string,
+    (
+      value: A,
+    ) => Maybe<any> | AsyncMaybe<any> | Promise<Maybe<any> | AsyncMaybe<any>>
+  >,
 >(
   fns: Exts,
 ): (m: Maybe<A> | AsyncMaybe<A>) => AsyncMaybe<
