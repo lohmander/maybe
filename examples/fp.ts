@@ -12,7 +12,8 @@ async function fetchCommentStats(
 
 const getPostSummary = (post: Post) =>
   pipe(
-    M.fromNullable(post.comments),
+    post.comments,
+    M.fromNullable,
     M.map((comments) => ({
       id: post.id,
       title: post.title,
@@ -42,8 +43,10 @@ const getResult = (user?: User | null) =>
   pipe(
     user,
     M.fromNullable,
-    M.extend("enrichment", getEnrichment),
-    M.extend("postSummaries", getPostSummaries),
+    M.assign({
+      enrichment: getEnrichment,
+      postSummaries: getPostSummaries,
+    }),
     M.withDefault({ count: 0 }),
   );
 

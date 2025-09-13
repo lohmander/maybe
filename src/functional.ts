@@ -1,5 +1,6 @@
 import { Maybe } from "./Maybe";
 import { AsyncMaybe } from "./AsyncMaybe";
+import type { ReturnMaybeType } from "./types";
 
 /**
  * fromNullable - Creates a Maybe or AsyncMaybe from a possibly-null/undefined value.
@@ -169,6 +170,45 @@ export function extend<A extends object, K extends string, B>(
 }
 
 /**
+ * Assign one or more properties to an object inside a Maybe or AsyncMaybe.
+ * Runs all property functions and short-circuits to Nothing if:
+ * - the container is Nothing
+ * - the value is not an object
+ * - any property function returns Nothing
+ *
+ * @param fns - An object where keys are property names and values are functions
+ *              returning Maybe or AsyncMaybe.
+ * @returns A function that takes a Maybe or AsyncMaybe and returns the extended container.
+ */
+export function assign<
+  A extends object,
+  Exts extends Record<string, (value: A) => Maybe<any>>,
+>(
+  fns: Exts,
+): (m: Maybe<A>) => Maybe<
+  A & {
+    [P in keyof Exts]: ReturnMaybeType<Exts[P]>;
+  }
+>;
+export function assign<
+  A extends object,
+  Exts extends Record<string, (value: A) => Maybe<any> | AsyncMaybe<any>>,
+>(
+  fns: Exts,
+): (m: Maybe<A> | AsyncMaybe<A>) => AsyncMaybe<
+  A & {
+    [P in keyof Exts]: ReturnMaybeType<Exts[P]>;
+  }
+>;
+export function assign<
+  A extends object,
+  Exts extends Record<string, (value: A) => Maybe<any> | AsyncMaybe<any>>,
+>(fns: Exts): (m: any) => any {
+  return ((m: Maybe<A> | AsyncMaybe<A>) =>
+    (m as any).assign(fns as any)) as any;
+}
+
+/**
  * withDefault - Provides a default value if the Maybe or AsyncMaybe is Nothing.
  *
  * @typeParam A - The input value type.
@@ -176,13 +216,17 @@ export function extend<A extends object, K extends string, B>(
  * @param defaultValue - A fallback value.
  * @returns A function that ensures a Maybe<A> becomes Maybe<A | B> or an AsyncMaybe<A> becomes AsyncMaybe<A | B>.
  */
-export function withDefault<A, B>(
-  defaultValue: B,
-): {
-  (m: Maybe<A>): Maybe<A | B>;
-  (m: AsyncMaybe<A>): AsyncMaybe<A | B>;
+export function withDefault<B>(defaultValue: B): {
+  <M extends Maybe<any> | AsyncMaybe<any>>(
+    m: M,
+  ): M extends Maybe<infer A>
+    ? Maybe<A | B>
+    : M extends AsyncMaybe<infer A>
+      ? AsyncMaybe<A | B>
+      : never;
 } {
-  return ((m: Maybe<A> | AsyncMaybe<A>) => m.withDefault(defaultValue)) as any;
+  return ((m: Maybe<any> | AsyncMaybe<any>) =>
+    m.withDefault(defaultValue)) as any;
 }
 
 /**
