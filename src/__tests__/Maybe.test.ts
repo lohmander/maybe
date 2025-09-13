@@ -139,6 +139,81 @@ describe("Maybe", () => {
     });
   });
 
+  describe("assign", () => {
+    it("assigns a single property", () => {
+      const user = Maybe.fromNullable({ id: 1, name: "Alice" });
+
+      const result = user.assign({
+        profile: (u) => Maybe.fromNullable(u.name?.toUpperCase()),
+      });
+
+      expect(result.value()).toEqual({
+        id: 1,
+        name: "Alice",
+        profile: "ALICE",
+      });
+    });
+
+    it("assigns multiple properties in one call", () => {
+      const user = Maybe.fromNullable({ id: 2, name: "Bob" });
+
+      const result = user.assign({
+        profile: (u) => Maybe.fromNullable(u.name?.toUpperCase()),
+        settings: () => Maybe.fromNullable("dark"),
+      });
+
+      expect(result.value()).toEqual({
+        id: 2,
+        name: "Bob",
+        profile: "BOB",
+        settings: "dark",
+      });
+    });
+
+    it("short-circuits to Nothing if the Maybe is Nothing", () => {
+      const user = Maybe.fromNullable<{ id: number; name: string }>(null);
+
+      const result = user.assign({
+        profile: (u) => Maybe.fromNullable(u.name.toUpperCase()),
+      });
+
+      expect(result.value()).toBeNull();
+    });
+
+    it("short-circuits to Nothing if the inner value is not an object", () => {
+      const notObj = Maybe.fromNullable(42);
+
+      const result = notObj.assign({
+        profile: () => Maybe.fromNullable("oops"),
+      });
+
+      expect(result.value()).toBeNull();
+    });
+
+    it("short-circuits to Nothing if any property function returns Nothing", () => {
+      const user = Maybe.fromNullable({ id: 3, name: "Charlie" });
+
+      const result = user.assign({
+        profile: () => Maybe.fromNullable(null), // Nothing
+        settings: () => Maybe.fromNullable("light"),
+      });
+
+      expect(result.value()).toBeNull();
+    });
+
+    it("allows chaining with map after assign", () => {
+      const user = Maybe.fromNullable({ id: 4, name: "Diana" });
+
+      const result = user
+        .assign({
+          profile: (u) => Maybe.fromNullable(u.name?.toUpperCase()),
+        })
+        .map((u) => u.profile + "!");
+
+      expect(result.value()).toBe("DIANA!");
+    });
+  });
+
   describe("filterMap", () => {
     it("maps an array of items to Maybe and filters out Nothing/null/undefined results", () => {
       const arr = [{ greet: "a" }, { greet: "b" }];

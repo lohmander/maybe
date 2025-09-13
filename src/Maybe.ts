@@ -127,6 +127,51 @@ export class Maybe<T> {
   }
 
   /**
+   * Assign one or more properties to an object inside a Maybe.
+   * Runs all property functions and short-circuits to Nothing if:
+   * - the Maybe is Nothing
+   * - the value is not an object
+   * - any property function returns Nothing
+   *
+   * @param fns - An object where keys are property names and values are functions
+   *              returning a Maybe of the property value.
+   * @returns A Maybe of the extended object, or Nothing if short-circuited.
+   */
+  assign<Exts extends Record<string, (value: T) => Maybe<any>>>(
+    fns: Exts,
+  ): Maybe<
+    T & {
+      [K in keyof Exts]: Exts[K] extends (value: T) => Maybe<infer U>
+        ? U
+        : never;
+    }
+  > {
+    if (isNothing(this._value) || typeof this._value !== "object") {
+      return new Maybe<any>(null);
+    }
+
+    return this.flatMap((obj) => {
+      const props: Record<string, any> = {};
+
+      for (const [key, fn] of Object.entries(fns)) {
+        const res = fn(obj);
+
+        if (!(res instanceof Maybe)) {
+          return new Maybe<any>(null); // invalid return, treat as Nothing
+        }
+
+        if (isNothing(res.value())) {
+          return new Maybe<any>(null); // short-circuit: whole result is Nothing
+        }
+
+        props[key] = res.value();
+      }
+
+      return new Maybe<any>({ ...(obj as any), ...props });
+    });
+  }
+
+  /**
    * Map and filter over an array inside a Maybe.
    * If Nothing, returns Nothing. If Just with an array,
    * applies the function to each element, keeping only Just results.
