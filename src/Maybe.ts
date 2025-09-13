@@ -1,3 +1,4 @@
+import type { ReturnMaybeType } from "./types";
 import { isJust, isNothing } from "./utils";
 
 /**
@@ -141,9 +142,7 @@ export class Maybe<T> {
     fns: Exts,
   ): Maybe<
     T & {
-      [K in keyof Exts]: Exts[K] extends (value: T) => Maybe<infer U>
-        ? U
-        : never;
+      [K in keyof Exts]: ReturnMaybeType<Exts[K]>;
     }
   > {
     if (isNothing(this._value) || typeof this._value !== "object") {

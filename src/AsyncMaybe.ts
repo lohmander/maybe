@@ -1,4 +1,5 @@
 import { Maybe } from "./Maybe";
+import type { ReturnMaybeType } from "./types";
 import { isJust, isNothing } from "./utils";
 
 /**
@@ -188,15 +189,7 @@ export class AsyncMaybe<T> {
     fns: Exts,
   ): AsyncMaybe<
     T & {
-      [K in keyof Exts]: Exts[K] extends (value: T) => Maybe<infer U>
-        ? U
-        : Exts[K] extends (value: T) => AsyncMaybe<infer U>
-          ? U
-          : Exts[K] extends (
-                value: T,
-              ) => Promise<Maybe<infer U> | AsyncMaybe<infer U>>
-            ? U
-            : never;
+      [P in keyof Exts]: ReturnMaybeType<Exts[P]>;
     }
   > {
     return this.flatMap((obj) => {
