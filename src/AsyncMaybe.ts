@@ -1,4 +1,5 @@
 import { Maybe } from "./Maybe";
+import { isJust, isNothing } from "./utils";
 
 /**
  * AsyncMaybe<T> - An async container for optional values.
@@ -11,7 +12,7 @@ import { Maybe } from "./Maybe";
  * wherever possible.
  */
 export class AsyncMaybe<T> {
-  private constructor(private readonly _value: Promise<T | null | undefined>) {}
+  private constructor(public readonly _value: Promise<T | null | undefined>) {}
 
   /**
    * fromNullable - Creates an AsyncMaybe from a possibly-null/undefined value.
@@ -44,25 +45,6 @@ export class AsyncMaybe<T> {
    */
   static fromMaybe<T>(maybe: Maybe<T>): AsyncMaybe<T> {
     return new AsyncMaybe(Promise.resolve(maybe.value()));
-  }
-
-  /**
-   * isNothing - Checks whether the AsyncMaybe is Nothing.
-   *
-   * @returns A Promise resolving to true if the value is null/undefined, false otherwise.
-   */
-  async isNothing(): Promise<boolean> {
-    const v = await this._value;
-    return v == null; // intentionally == to catch both null and undefined
-  }
-
-  /**
-   * isJust - Checks whether the AsyncMaybe contains a value.
-   *
-   * @returns A Promise resolving to true if the value is present, false otherwise.
-   */
-  async isJust(): Promise<boolean> {
-    return !(await this.isNothing());
   }
 
   /**
@@ -100,10 +82,9 @@ export class AsyncMaybe<T> {
   ): AsyncMaybe<U> {
     const next = (async () => {
       const v = await this._value;
-      const m = Maybe.fromNullable(v);
-      if (m.isNothing()) return m.value() as unknown as U;
+      if (isNothing(v)) return v as unknown as U;
 
-      const out = await fn(m.value() as T);
+      const out = await fn(v as T);
       if (out instanceof AsyncMaybe) return await out.value();
       if (out instanceof Maybe) return out.value();
       return out as U;
@@ -265,7 +246,7 @@ export class AsyncMaybe<T> {
     const next = (async () => {
       const v = await this._value;
       const m = Maybe.fromNullable(v);
-      if (m.isJust()) await fn(m.value() as T);
+      if (isJust(m.value())) await fn(m.value() as T);
       return v;
     })();
     return new AsyncMaybe(next);

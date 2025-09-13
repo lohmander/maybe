@@ -1,3 +1,5 @@
+import { isJust, isNothing } from "./utils";
+
 /**
  * Maybe<T> - A container for optional values.
  *
@@ -8,7 +10,7 @@
  * Inspired by functional programming but designed for JS/TS ergonomics.
  */
 export class Maybe<T> {
-  private constructor(private readonly _value: T | null | undefined) {}
+  private constructor(public readonly _value: T | null | undefined) {}
 
   /**
    * Create a Maybe from a nullable value.
@@ -21,33 +23,13 @@ export class Maybe<T> {
   }
 
   /**
-   * Check if the Maybe is empty.
-   *
-   * NOTE: Uses `== null` intentionally to catch both null and undefined.
-   *
-   * @returns true if the Maybe is Nothing, false if it contains a value.
-   */
-  isNothing(): this is Maybe<never> {
-    return this._value == null;
-  }
-
-  /**
-   * Check if the Maybe contains a value.
-   *
-   * @returns true if the Maybe is Just, false if it is Nothing.
-   */
-  isJust(): boolean {
-    return !this.isNothing();
-  }
-
-  /**
    * Transform the value if present, otherwise propagate Nothing.
    *
    * @param fn - A function mapping the contained value to a new value.
    * @returns A new Maybe of the mapped value, or Nothing if empty.
    */
   map<U>(fn: (value: T) => U): Maybe<U> {
-    if (this.isNothing()) return this;
+    if (isNothing(this._value)) return new Maybe<U>(this._value);
     return new Maybe(fn(this._value as T));
   }
 
@@ -59,7 +41,7 @@ export class Maybe<T> {
    * @returns The resulting Maybe from applying the function, or Nothing if empty.
    */
   flatMap<U>(fn: (value: T) => Maybe<U>): Maybe<U> {
-    if (this.isNothing()) return this;
+    if (isNothing(this._value)) return new Maybe<U>(this._value);
     return fn(this._value as T);
   }
 
@@ -71,7 +53,7 @@ export class Maybe<T> {
    * @returns A Maybe containing the original or default value.
    */
   withDefault<U>(defaultValue: U): Maybe<T | U> {
-    return this.isNothing() ? new Maybe(defaultValue) : this;
+    return isNothing(this._value) ? new Maybe(defaultValue) : this;
   }
 
   /**
@@ -82,7 +64,7 @@ export class Maybe<T> {
    * @returns The contained value if present, otherwise the default.
    */
   getOrElse<U>(defaultValue: U): T | U {
-    return this.isNothing() ? defaultValue : (this._value as T);
+    return isNothing(this._value) ? defaultValue : (this._value as T);
   }
 
   /**
@@ -92,7 +74,7 @@ export class Maybe<T> {
    * @returns This Maybe instance, unchanged.
    */
   effect(fn: (value: T) => void): Maybe<T> {
-    if (this.isJust()) fn(this._value as T);
+    if (isJust(this._value)) fn(this._value as T);
     return this;
   }
 
@@ -119,7 +101,7 @@ export class Maybe<T> {
   filter(
     predicate: ((value: T) => boolean) | ((value: T) => value is any),
   ): Maybe<any> {
-    if (this.isNothing() || !predicate(this._value as T)) {
+    if (isNothing(this._value) || !predicate(this._value as T)) {
       return new Maybe(null);
     }
     return new Maybe(this._value);
@@ -136,7 +118,7 @@ export class Maybe<T> {
     key: K,
     fn: (value: T) => Maybe<U>,
   ): Maybe<T & { [P in K]: U }> {
-    if (this.isNothing() || typeof this._value !== "object") {
+    if (isNothing(this._value) || typeof this._value !== "object") {
       return new Maybe<T & { [P in K]: U }>(null);
     }
     return this.flatMap((obj) =>
@@ -155,7 +137,7 @@ export class Maybe<T> {
    * @returns A Maybe of the filtered/mapped array, or Nothing if empty.
    */
   filterMap<U, V>(this: Maybe<U[]>, fn: (value: U) => Maybe<V>): Maybe<V[]> {
-    if (this.isNothing()) return new Maybe<V[]>(null);
+    if (isNothing(this._value)) return new Maybe<V[]>(null);
 
     const arr = this._value as U[];
     const result: V[] = [];
@@ -165,7 +147,7 @@ export class Maybe<T> {
       if (!(maybeVal instanceof Maybe)) {
         return Maybe.fromNullable<V[]>(null);
       }
-      if (maybeVal.isJust()) {
+      if (isJust(maybeVal.value())) {
         result.push(maybeVal.value() as V);
       }
     }

@@ -32,20 +32,6 @@ describe("AsyncMaybe", () => {
     });
   });
 
-  describe("isNothing / isJust", () => {
-    it("returns true for Nothing", async () => {
-      const m = AsyncMaybe.fromNullable<number>(null);
-      expect(await m.isNothing()).toBe(true);
-      expect(await m.isJust()).toBe(false);
-    });
-
-    it("returns true for Just", async () => {
-      const m = AsyncMaybe.fromNullable(42);
-      expect(await m.isNothing()).toBe(false);
-      expect(await m.isJust()).toBe(true);
-    });
-  });
-
   describe("map", () => {
     it("applies the map function to the resolved value", async () => {
       const m = AsyncMaybe.fromPromise(Promise.resolve(5)).map((x) => x * 2);

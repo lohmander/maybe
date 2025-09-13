@@ -41,8 +41,8 @@ export const fromMaybe = AsyncMaybe.fromMaybe;
 export function map<A, B>(
   fn: (value: A) => B,
 ): {
-  (m: Maybe<A>): Maybe<B>;
   (m: AsyncMaybe<A>): AsyncMaybe<B>;
+  (m: Maybe<A>): Maybe<B>;
 } {
   return ((m: Maybe<A> | AsyncMaybe<A>) => m.map(fn as any)) as any;
 }
@@ -59,35 +59,19 @@ export function map<A, B>(
  * @returns A function that flatMaps a Maybe<A> to Maybe<B> or an AsyncMaybe<A> to AsyncMaybe<B>.
  */
 export function flatMap<A, B>(
-  fn: (value: A) => Maybe<B>,
+  fn: (a: A) => Maybe<B>,
 ): {
   (m: Maybe<A>): Maybe<B>;
   (m: AsyncMaybe<A>): AsyncMaybe<B>;
 };
 export function flatMap<A, B>(
-  fn: (value: A) => AsyncMaybe<B>,
-): {
-  (m: Maybe<A>): AsyncMaybe<B>;
-  (m: AsyncMaybe<A>): AsyncMaybe<B>;
-};
+  fn: (a: A) => AsyncMaybe<B>,
+): (m: Maybe<A> | AsyncMaybe<A>) => AsyncMaybe<B>;
 export function flatMap<A, B>(
-  fn: (value: A) => B,
-): {
-  (m: Maybe<A>): Maybe<B>;
-  (m: AsyncMaybe<A>): AsyncMaybe<B>;
-};
-export function flatMap<A, B>(
-  fn: (value: A) => Promise<Maybe<B> | AsyncMaybe<B> | B>,
-): {
-  (m: Maybe<A>): AsyncMaybe<B>;
-  (m: AsyncMaybe<A>): AsyncMaybe<B>;
-};
-export function flatMap<A, B>(
-  fn: (
-    value: A,
-  ) => Maybe<B> | AsyncMaybe<B> | B | Promise<Maybe<B> | AsyncMaybe<B> | B>,
-): any {
-  return ((m: Maybe<A> | AsyncMaybe<A>) => m.flatMap(fn as any)) as any;
+  fn: (a: A) => Maybe<B> | AsyncMaybe<B>,
+): (m: any) => Maybe<B> | AsyncMaybe<B> {
+  return (m: Maybe<A> | AsyncMaybe<A>) =>
+    (m as Maybe<A> | AsyncMaybe<A>).flatMap(fn as any) as any;
 }
 
 /**
@@ -136,8 +120,9 @@ export function filter<A>(predicate: (value: A) => boolean): {
 export function filterMap<A, B>(
   fn: (value: A) => Maybe<B>,
 ): {
-  (m: Maybe<A[]>): Maybe<B[]>;
-  (m: AsyncMaybe<A[]>): AsyncMaybe<B[]>;
+  <M extends Maybe<A[]> | AsyncMaybe<A[]>>(
+    m: M,
+  ): M extends AsyncMaybe<A[]> ? AsyncMaybe<B[]> : Maybe<B[]>;
 };
 export function filterMap<A, B>(
   fn: (value: A) => AsyncMaybe<B>,
@@ -146,23 +131,9 @@ export function filterMap<A, B>(
   (m: AsyncMaybe<A[]>): AsyncMaybe<B[]>;
 };
 export function filterMap<A, B>(
-  fn: (value: A) => B,
-): {
-  (m: Maybe<A[]>): Maybe<B[]>;
-  (m: AsyncMaybe<A[]>): AsyncMaybe<B[]>;
-};
-export function filterMap<A, B>(
-  fn: (value: A) => Promise<Maybe<B> | AsyncMaybe<B> | B>,
-): {
-  (m: Maybe<A[]>): AsyncMaybe<B[]>;
-  (m: AsyncMaybe<A[]>): AsyncMaybe<B[]>;
-};
-export function filterMap<A, B>(
-  fn: (
-    value: A,
-  ) => Maybe<B> | AsyncMaybe<B> | B | Promise<Maybe<B> | AsyncMaybe<B> | B>,
-): any {
-  return (m: Maybe<A[]> | AsyncMaybe<A[]>) => (m as any).filterMap(fn as any);
+  fn: (value: A) => Maybe<B> | AsyncMaybe<B>,
+): (m: any) => Maybe<B[]> | AsyncMaybe<B[]> {
+  return (m) => (m as any).filterMap(fn as any) as any;
 }
 
 /**
@@ -186,29 +157,14 @@ export function extend<A extends object, K extends string, B>(
   key: K,
   fn: (value: A) => AsyncMaybe<B>,
 ): {
-  (m: Maybe<A>): AsyncMaybe<A & { [P in K]: B }>;
-  (m: AsyncMaybe<A>): AsyncMaybe<A & { [P in K]: B }>;
+  (m: Maybe<A> | AsyncMaybe<A>): AsyncMaybe<A & { [P in K]: B }>;
 };
 export function extend<A extends object, K extends string, B>(
   key: K,
-  fn: (value: A) => B,
+  fn: (value: A) => Maybe<B> | AsyncMaybe<B>,
 ): {
-  (m: Maybe<A>): Maybe<A & { [P in K]: B }>;
-  (m: AsyncMaybe<A>): AsyncMaybe<A & { [P in K]: B }>;
-};
-export function extend<A extends object, K extends string, B>(
-  key: K,
-  fn: (value: A) => Promise<Maybe<B> | AsyncMaybe<B> | B>,
-): {
-  (m: Maybe<A>): AsyncMaybe<A & { [P in K]: B }>;
-  (m: AsyncMaybe<A>): AsyncMaybe<A & { [P in K]: B }>;
-};
-export function extend<A extends object, K extends string, B>(
-  key: K,
-  fn: (
-    value: A,
-  ) => Maybe<B> | AsyncMaybe<B> | B | Promise<Maybe<B> | AsyncMaybe<B> | B>,
-): any {
+  (m: Maybe<A> | AsyncMaybe<A>): any;
+} {
   return ((m: Maybe<A> | AsyncMaybe<A>) => m.extend(key, fn as any)) as any;
 }
 

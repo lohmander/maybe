@@ -159,7 +159,6 @@ describe("functional interface", () => {
         // @ts-expect-error not an object
         maybe,
       );
-      // @ts-expect-error
       expect(extended.value()).toBeNull();
     });
 
