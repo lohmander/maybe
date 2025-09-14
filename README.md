@@ -60,7 +60,6 @@ function getUserActivity(id: string) {
     M.fromPromise,
     M.assign({
       posts: piped(
-        u,
         M.fromNullable,
         M.filter((u) => u.isAuthor),
         M.flatMap((u) => M.fromPromise(getPosts(u.id))),
