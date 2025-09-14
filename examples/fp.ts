@@ -1,7 +1,6 @@
-import { pipe } from "remeda";
+import * as R from "remeda";
 import * as M from "../src/functional";
-import type { User, Post, Comment } from "./types";
-import type { Maybe } from "../src";
+import type { Comment, Post, User } from "./types";
 
 // Mock API
 async function fetchCommentStats(
@@ -11,7 +10,7 @@ async function fetchCommentStats(
 }
 
 const getPostSummary = (post: Post) =>
-  pipe(
+  R.pipe(
     post.comments,
     M.fromNullable,
     M.map((comments) => ({
@@ -22,15 +21,21 @@ const getPostSummary = (post: Post) =>
   );
 
 const getPostSummaries = (user: User) =>
-  pipe(user.posts, M.fromNullable, M.filterMap(getPostSummary));
+  R.pipe(user.posts, M.fromNullable, M.filterMap(getPostSummary));
 
 const getEnrichment = (user: User) =>
-  pipe(
+  R.pipe(
     user.posts,
     M.fromNullable,
     M.map((posts) => posts.flatMap((post) => post.comments ?? [])),
-    M.flatMap((comments) => M.fromPromise(fetchCommentStats(comments))),
-    M.flatMap(({ count }) => M.fromNullable(count).map((x) => x * 4)),
+    M.flatMap(R.piped(fetchCommentStats, M.fromPromise)),
+    M.flatMap(
+      R.piped(
+        R.prop("count"),
+        M.fromNullable,
+        M.map((x) => x * 4),
+      ),
+    ),
   );
 
 const x = M.fromPromise(Promise.resolve(123));
@@ -40,7 +45,7 @@ const y = M.flatMap<number, number>((n) =>
 )(x);
 
 const getResult = (user?: User | null) =>
-  pipe(
+  R.pipe(
     user,
     M.fromNullable,
     M.assign({
