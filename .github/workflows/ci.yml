@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build:
+    name: Build & Test (Bun)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "latest"
+
+      - name: Install dependencies (bun)
+        working-directory: maybe
+        run: |
+          echo "Working directory: $(pwd)/maybe"
+          # bun install is idempotent and will use bun.lockb if present
+          bun install
+
+      - name: Run tests (bun) if present
+        working-directory: maybe
+        run: |
+          if [ -f package.json ] && grep -q "\"test\"" package.json; then
+            echo "Found test script in package.json — running 'bun test'"
+            # Run tests; let failures bubble up and fail the job
+            bun test
+          else
+            echo "No test script found in package.json — skipping tests"
+          fi
+
+      - name: Run lint (bun) if present
+        working-directory: maybe
+        run: |
+          if [ -f package.json ] && grep -q "\"lint\"" package.json; then
+            echo "Found lint script in package.json — running 'bun lint'"
+            bun lint || { echo "Lint step failed"; exit 1; }
+          else
+            echo "No lint script found in package.json — skipping lint"
+          fi
+
+      - name: TypeScript typecheck (if tsconfig present)
+        working-directory: maybe
+        run: |
+          if [ -f tsconfig.json ]; then
+            echo "tsconfig.json found — attempting typecheck via 'bun x tsc --noEmit'"
+            # Attempt to run tsc through bun. If typescript isn't installed, print a message and fail the step
+            # (so maintainers know to add TypeScript to dev deps if they want typecheck in CI).
+            if bun x tsc --noEmit; then
+              echo "Typecheck passed"
+            else
+              echo "::error::TypeScript typecheck failed or 'tsc' is not available. Ensure 'typescript' is a devDependency."
+              exit 1
+            fi
+          else
+            echo "No tsconfig.json found — skipping typecheck"
+          fi
