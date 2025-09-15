@@ -21,14 +21,12 @@ jobs:
           bun-version: "latest"
 
       - name: Install dependencies (bun)
-        working-directory: maybe
         run: |
-          echo "Working directory: $(pwd)/maybe"
+          echo "Working directory: $(pwd)"
           # bun install is idempotent and will use bun.lockb if present
           bun install
 
       - name: Run tests (bun) if present
-        working-directory: maybe
         run: |
           if [ -f package.json ] && grep -q "\"test\"" package.json; then
             echo "Found test script in package.json — running 'bun test'"
@@ -39,7 +37,6 @@ jobs:
           fi
 
       - name: Run lint (bun) if present
-        working-directory: maybe
         run: |
           if [ -f package.json ] && grep -q "\"lint\"" package.json; then
             echo "Found lint script in package.json — running 'bun lint'"
@@ -49,7 +46,6 @@ jobs:
           fi
 
       - name: TypeScript typecheck (if tsconfig present)
-        working-directory: maybe
         run: |
           if [ -f tsconfig.json ]; then
             echo "tsconfig.json found — attempting typecheck via 'bun x tsc --noEmit'"

@@ -2,10 +2,20 @@
   "name": "@lohmander/maybe",
   "module": "src/index.ts",
   "type": "module",
+  "scripts": {
+    "lint": "eslint \"src/**/*.{ts,tsx,js,jsx}\" --fix",
+    "test": "echo \"No tests\" && exit 0"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "remeda": "^2.31.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "eslint": "^8.48.0",
+    "@typescript-eslint/parser": "^6.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.10.0",
+    "eslint-config-prettier": "^9.3.0",
+    "eslint-plugin-import": "^2.29.4",
+    "prettier": "^3.8.0"
   },
   "peerDependencies": {
     "typescript": "^5"
