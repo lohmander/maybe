@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { ReturnMaybeType } from "./types";
 import { isJust, isNothing } from "./utils";
 
@@ -99,13 +100,10 @@ export class Maybe<T> {
    */
   filter<U extends T>(predicate: (value: T) => value is U): Maybe<U>;
   filter(predicate: (value: T) => boolean): Maybe<T>;
-  filter(
-    predicate: ((value: T) => boolean) | ((value: T) => value is any),
-  ): Maybe<any> {
-    if (isNothing(this._value) || !predicate(this._value as T)) {
-      return new Maybe(null);
-    }
-    return new Maybe(this._value);
+  filter(predicate: ((value: T) => boolean) | ((value: T) => value is any)): Maybe<any> {
+    if (isNothing(this._value) || !predicate(this._value as T)) return new Maybe<any>(null);
+
+    return new Maybe<any>(this._value);
   }
 
   /**
@@ -115,16 +113,15 @@ export class Maybe<T> {
    * @param fn - A function returning a Maybe of the new property value.
    * @returns A Maybe of the extended object, or Nothing if empty or not an object.
    */
-  extend<K extends string, U>(
-    key: K,
-    fn: (value: T) => Maybe<U>,
-  ): Maybe<T & { [P in K]: U }> {
-    if (isNothing(this._value) || typeof this._value !== "object") {
+  extend<K extends string, U>(key: K, fn: (value: T) => Maybe<U>): Maybe<T & { [P in K]: U }> {
+    if (isNothing(this._value) || typeof this._value !== "object")
       return new Maybe<T & { [P in K]: U }>(null);
-    }
-    return this.flatMap((obj) =>
-      fn(obj).map((u) => ({ ...(obj as any), [key]: u })),
-    );
+
+    // Use a broadly-typed approach here to keep the API ergonomic.
+
+    return this.flatMap((obj: any) =>
+      fn(obj).map((u: any) => ({ ...(obj as any), [key]: u })),
+    ) as any;
   }
 
   /**
@@ -145,19 +142,15 @@ export class Maybe<T> {
       [K in keyof Exts]: ReturnMaybeType<Exts[K]>;
     }
   > {
-    if (isNothing(this._value) || typeof this._value !== "object") {
-      return new Maybe<any>(null);
-    }
+    if (isNothing(this._value) || typeof this._value !== "object") return new Maybe<any>(null);
 
     const obj = this._value as T;
 
     return Object.entries(fns).reduce(
-      (acc, [k, fn]) =>
-        acc.flatMap((lastVal: any) =>
-          fn(obj).map((v: any) => ({ ...lastVal, [k]: v })),
-        ),
+      (acc: any, [k, fn]: [string, (v: T) => Maybe<any>]) =>
+        acc.flatMap((lastVal: any) => fn(obj).map((v: any) => ({ ...lastVal, [k]: v }))),
       new Maybe(obj),
-    );
+    ) as any;
   }
 
   /**
@@ -178,12 +171,9 @@ export class Maybe<T> {
 
     for (const el of arr) {
       const maybeVal = fn(el);
-      if (!(maybeVal instanceof Maybe)) {
-        return Maybe.fromNullable<V[]>(null);
-      }
-      if (isJust(maybeVal.value())) {
-        result.push(maybeVal.value() as V);
-      }
+      if (!(maybeVal instanceof Maybe)) return Maybe.fromNullable<V[]>(null);
+
+      if (isJust(maybeVal.value())) result.push(maybeVal.value() as V);
     }
 
     return new Maybe(result);

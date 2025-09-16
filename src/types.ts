@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { AsyncMaybe } from "./AsyncMaybe";
 import type { Maybe } from "./Maybe";
 
@@ -10,6 +11,4 @@ export type ExtractValue<M> =
         ? ExtractValue<T>
         : never;
 
-export type ReturnMaybeType<Fn extends (...args: any[]) => any> = ExtractValue<
-  ReturnType<Fn>
->;
+export type ReturnMaybeType<Fn extends (...args: any[]) => any> = ExtractValue<ReturnType<Fn>>;

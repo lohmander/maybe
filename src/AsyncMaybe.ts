@@ -77,9 +77,7 @@ export class AsyncMaybe<T> {
    * @returns A new AsyncMaybe containing the flattened result, or Nothing if absent.
    */
   flatMap<U>(
-    fn: (
-      value: T,
-    ) => Maybe<U> | AsyncMaybe<U> | U | Promise<Maybe<U> | AsyncMaybe<U> | U>,
+    fn: (value: T) => Maybe<U> | AsyncMaybe<U> | U | Promise<Maybe<U> | AsyncMaybe<U> | U>,
   ): AsyncMaybe<U> {
     const next = (async () => {
       const v = await this._value;
@@ -107,9 +105,9 @@ export class AsyncMaybe<T> {
    */
   filter<U extends T>(predicate: (value: T) => value is U): AsyncMaybe<U>;
   filter(predicate: (value: T) => boolean): AsyncMaybe<T>;
-  filter(
-    predicate: ((value: T) => boolean) | ((value: T) => value is any),
-  ): AsyncMaybe<any> {
+  // Relax predicate type so user-supplied type predicates work when T is arbitrary.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  filter(predicate: ((value: T) => boolean) | ((value: T) => value is any)): AsyncMaybe<any> {
     const next = (async () => {
       const v = await this._value;
       if (v == null) {
@@ -117,10 +115,9 @@ export class AsyncMaybe<T> {
         return v;
       }
       // Only keep if predicate passes
-      if (predicate(v as T)) {
-        return v;
-      }
-      // present but failed → undefined
+      if ((predicate as (v: T) => boolean)(v as T)) return v;
+
+      // present but failed → null
       return null;
     })();
     return new AsyncMaybe(next);
@@ -141,13 +138,9 @@ export class AsyncMaybe<T> {
    */
   extend<K extends string, U>(
     key: K,
-    fn: (
-      value: T,
-    ) => Maybe<U> | AsyncMaybe<U> | U | Promise<Maybe<U> | AsyncMaybe<U> | U>,
+    fn: (value: T) => Maybe<U> | AsyncMaybe<U> | U | Promise<Maybe<U> | AsyncMaybe<U> | U>,
   ): AsyncMaybe<T & { [P in K]: U }> {
-    return this.filter(
-      (v): v is T & object => typeof v === "object" && v !== null,
-    ).flatMap((obj) =>
+    return this.filter((v): v is T & object => typeof v === "object" && v !== null).flatMap((obj) =>
       AsyncMaybe.fromPromise(
         (async () => {
           const out = await fn(obj);
@@ -160,8 +153,8 @@ export class AsyncMaybe<T> {
 
           const newVal = await lifted.value();
           return newVal == null
-            ? (null as any)
-            : ({ ...(obj as any), [key]: newVal } as T & { [P in K]: U });
+            ? null
+            : ({ ...(obj as T & Record<string, unknown>), [key]: newVal } as T & { [P in K]: U });
         })(),
       ),
     );
@@ -181,9 +174,9 @@ export class AsyncMaybe<T> {
   assign<
     Exts extends Record<
       string,
-      (
-        value: T,
-      ) => Maybe<any> | AsyncMaybe<any> | Promise<Maybe<any> | AsyncMaybe<any>>
+      // allow functions with a loose parameter type to avoid incompatibility when T is generic
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (value: any) => Maybe<any> | AsyncMaybe<any> | Promise<Maybe<any> | AsyncMaybe<any>>
     >,
   >(
     fns: Exts,
@@ -193,9 +186,7 @@ export class AsyncMaybe<T> {
     }
   > {
     return this.flatMap((obj) => {
-      if (typeof obj !== "object" || obj === null) {
-        return AsyncMaybe.fromNullable(null);
-      }
+      if (typeof obj !== "object" || obj === null) return AsyncMaybe.fromNullable(null);
 
       // Run all extenders in parallel
       const tasks = Object.entries(fns).map(async ([key, fn]) => {
@@ -206,13 +197,12 @@ export class AsyncMaybe<T> {
       return AsyncMaybe.fromPromise(
         Promise.all(tasks).then((resolved) => {
           // Short-circuit: if any extender is Nothing, bail out
-          if (resolved.some(([, v]) => isNothing(v))) {
-            return null;
-          }
+          if (resolved.some(([, v]) => isNothing(v))) return null;
+
           return { ...obj, ...Object.fromEntries(resolved) };
         }),
       );
-    }) as any;
+    }) as AsyncMaybe<T & { [P in keyof Exts]: ReturnMaybeType<Exts[P]> }>;
   }
 
   /**
@@ -230,9 +220,7 @@ export class AsyncMaybe<T> {
    */
   filterMap<U, V>(
     this: AsyncMaybe<U[]>,
-    fn: (
-      value: U,
-    ) => Maybe<V> | AsyncMaybe<V> | V | Promise<Maybe<V> | AsyncMaybe<V> | V>,
+    fn: (value: U) => Maybe<V> | AsyncMaybe<V> | V | Promise<Maybe<V> | AsyncMaybe<V> | V>,
   ): AsyncMaybe<V[]> {
     const next = (async () => {
       const raw = await this._value;

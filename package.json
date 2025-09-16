@@ -3,19 +3,18 @@
   "module": "src/index.ts",
   "type": "module",
   "scripts": {
-    "lint": "eslint \"src/**/*.{ts,tsx,js,jsx}\" --fix",
-    "test": "echo \"No tests\" && exit 0"
+    "lint": "eslint \"src/**/*.{ts,tsx,js,jsx}\" --ignore-pattern \"**/*.test.*\" --ignore-pattern \"**/*.spec.*\" --ignore-pattern \"**/__tests__/**\" --fix",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\""
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.6.2",
     "remeda": "^2.31.1",
     "typescript": "^5",
-    "eslint": "^8.48.0",
-    "@typescript-eslint/parser": "^6.10.0",
-    "@typescript-eslint/eslint-plugin": "^6.10.0",
-    "eslint-config-prettier": "^9.3.0",
-    "eslint-plugin-import": "^2.29.4",
-    "prettier": "^3.8.0"
+    "typescript-eslint": "^8.44.0"
   },
   "peerDependencies": {
     "typescript": "^5"

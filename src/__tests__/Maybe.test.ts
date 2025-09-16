@@ -1,4 +1,5 @@
 import { describe, it, expect, mock } from "bun:test";
+
 import { Maybe } from "../Maybe";
 
 describe("Maybe", () => {
@@ -57,16 +58,12 @@ describe("Maybe", () => {
     });
 
     it("short circuits when no value is present", () => {
-      const m = Maybe.fromNullable<number>(null).flatMap((n) =>
-        Maybe.fromNullable(n + 4),
-      );
+      const m = Maybe.fromNullable<number>(null).flatMap((n) => Maybe.fromNullable(n + 4));
       expect(m.value()).toBeNull();
     });
 
     it("passes down the Nothing value as is", () => {
-      const m = Maybe.fromNullable<number>(undefined).flatMap((n) =>
-        Maybe.fromNullable(n + 4),
-      );
+      const m = Maybe.fromNullable<number>(undefined).flatMap((n) => Maybe.fromNullable(n + 4));
       expect(m.value()).toBeUndefined();
     });
   });

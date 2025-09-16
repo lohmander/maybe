@@ -1,15 +1,8 @@
 import { describe, test, expect } from "bun:test";
-import {
-  fromNullable,
-  fromPromise,
-  map,
-  flatMap,
-  filterMap,
-  extend,
-  assign,
-} from "../functional";
-import { Maybe } from "../Maybe";
+
 import { AsyncMaybe } from "../AsyncMaybe";
+import { fromNullable, fromPromise, map, flatMap, filterMap, extend, assign } from "../functional";
+import { Maybe } from "../Maybe";
 
 describe("functional interface", () => {
   describe("fromNullable", () => {
@@ -79,25 +72,19 @@ describe("functional interface", () => {
 
     test("flatMaps over an AsyncMaybe", async () => {
       const asyncMaybe = fromPromise(Promise.resolve(5));
-      const flatMapped = flatMap((x: number) =>
-        fromPromise(Promise.resolve(x * 3)),
-      )(asyncMaybe);
+      const flatMapped = flatMap((x: number) => fromPromise(Promise.resolve(x * 3)))(asyncMaybe);
       expect(await flatMapped.value()).toBe(15);
     });
 
     test("flatMaps AsyncMaybe with a Maybe-returning function", async () => {
       const asyncMaybe = fromPromise(Promise.resolve(5));
-      const flatMapped = flatMap((x: number) => fromNullable(x * 3))(
-        asyncMaybe,
-      );
+      const flatMapped = flatMap((x: number) => fromNullable(x * 3))(asyncMaybe);
       expect(await flatMapped.value()).toBe(15);
     });
 
     test("lifts Maybe to AsyncMaybe when the fn returns AsyncMaybe", async () => {
       const maybe = fromNullable(5);
-      const flatMapped = flatMap((x: number) =>
-        fromPromise(Promise.resolve(x * 3)),
-      )(maybe);
+      const flatMapped = flatMap((x: number) => fromPromise(Promise.resolve(x * 3)))(maybe);
       expect(flatMapped).toBeInstanceOf(AsyncMaybe);
       expect(await flatMapped.value()).toBe(15);
     });
@@ -106,17 +93,17 @@ describe("functional interface", () => {
   describe("filterMap", () => {
     test("maps and filters an array (Maybe)", () => {
       const maybe = fromNullable([1, 2, 3, 4, 5]);
-      const filterMapped = filterMap((x: number) =>
-        fromNullable(x % 2 === 0 ? x * 10 : null),
-      )(maybe);
+      const filterMapped = filterMap((x: number) => fromNullable(x % 2 === 0 ? x * 10 : null))(
+        maybe,
+      );
       expect(filterMapped.value()).toEqual([20, 40]);
     });
 
     test("returns Nothing when filtering over Nothing (Maybe)", () => {
       const maybe = fromNullable<number[]>(null);
-      const filterMapped = filterMap((x: number) =>
-        fromNullable(x % 2 === 0 ? x * 10 : null),
-      )(maybe);
+      const filterMapped = filterMap((x: number) => fromNullable(x % 2 === 0 ? x * 10 : null))(
+        maybe,
+      );
       expect(filterMapped.value()).toBeNull();
     });
 
@@ -130,9 +117,9 @@ describe("functional interface", () => {
 
     test("filterMaps AsyncMaybe with Maybe-returning fn", async () => {
       const asyncMaybe = fromPromise(Promise.resolve([1, 2, 3, 4, 5]));
-      const filterMapped = filterMap((x: number) =>
-        fromNullable(x % 2 === 0 ? x * 10 : null),
-      )(asyncMaybe);
+      const filterMapped = filterMap((x: number) => fromNullable(x % 2 === 0 ? x * 10 : null))(
+        asyncMaybe,
+      );
       expect(await filterMapped.value()).toEqual([20, 40]);
     });
 
@@ -148,9 +135,9 @@ describe("functional interface", () => {
   describe("extend", () => {
     test("extends an object inside a Maybe", () => {
       const maybe = fromNullable({ num: 3 });
-      const extended = extend("greet", (o: { num: number }) =>
-        fromNullable(`Hello ${o.num}`),
-      )(maybe);
+      const extended = extend("greet", (o: { num: number }) => fromNullable(`Hello ${o.num}`))(
+        maybe,
+      );
       expect(extended.value()).toEqual({ num: 3, greet: "Hello 3" });
     });
 
@@ -165,9 +152,7 @@ describe("functional interface", () => {
 
     test("short circuits if the fn returns Nothing (Maybe)", () => {
       const maybe = fromNullable({ num: 2 });
-      const extended = extend("greet", (_o: { num: number }) =>
-        fromNullable<string>(null),
-      )(maybe);
+      const extended = extend("greet", (_o: { num: number }) => fromNullable<string>(null))(maybe);
       expect(extended.value()).toBeNull();
     });
 
@@ -181,9 +166,9 @@ describe("functional interface", () => {
 
     test("works with AsyncMaybe where fn returns a Maybe", async () => {
       const asyncMaybe = fromPromise(Promise.resolve({ num: 3 }));
-      const extended = extend("greet", (o: { num: number }) =>
-        fromNullable(`Hello ${o.num}`),
-      )(asyncMaybe);
+      const extended = extend("greet", (o: { num: number }) => fromNullable(`Hello ${o.num}`))(
+        asyncMaybe,
+      );
       expect(await extended.value()).toEqual({ num: 3, greet: "Hello 3" });
     });
 
@@ -227,8 +212,7 @@ describe("functional interface", () => {
     test("assigns new properties with AsyncMaybe extenders", async () => {
       const user = fromNullable({ id: 3, name: "Bob" });
       const map = {
-        profile: (u: { name: string }) =>
-          fromPromise(Promise.resolve(`Hello ${u.name}`)),
+        profile: (u: { name: string }) => fromPromise(Promise.resolve(`Hello ${u.name}`)),
       };
       // @ts-expect-error
       const assigned = assign(map)(user);
@@ -246,8 +230,7 @@ describe("functional interface", () => {
       const user = fromNullable({ id: 4, name: null });
       const assigned = assign({
         // @ts-expect-error
-        profile: (u: { name: string | null }) =>
-          fromPromise(Promise.resolve(null)),
+        profile: (u: { name: string | null }) => fromPromise(Promise.resolve(null)),
       })(user);
 
       expect(assigned).toBeInstanceOf(AsyncMaybe);
