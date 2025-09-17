@@ -1,0 +1,44 @@
+{
+  "branches": ["main", "master"],
+  "repositoryUrl": "https://github.com/lohmander/maybe",
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/changelog",
+      {
+        "changelogFile": "CHANGELOG.md"
+      }
+    ],
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "bun run build",
+        "publishCmd": "bunx npm publish --access public --tag ${nextRelease.channel || 'latest'}",
+        "successCmd": "echo \"Published ${nextRelease.name}@${nextRelease.version}\""
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          {
+            "path": "dist/**",
+            "label": "distribution"
+          },
+          {
+            "path": "CHANGELOG.md",
+            "label": "changelog"
+          }
+        ]
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": ["package.json", "package-lock.json", "bun.lockb", "CHANGELOG.md"],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ]
+  ]
+}

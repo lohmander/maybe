@@ -1,0 +1,86 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Run semantic-release in dry-run mode"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  packages: write
+  issues: write
+
+jobs:
+  release:
+    name: Verify, Build & Release (bun + semantic-release)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "latest"
+
+      - name: Print environment info
+        run: |
+          echo "Workspace: $(pwd)"
+          echo "uname: $(uname -a)"
+          bun --version || true
+          node --version || echo "node not found"
+
+      - name: Install dependencies (bun)
+        run: |
+          bun install
+
+      - name: Run tests
+        run: |
+          bun run test
+
+      - name: Run lint
+        run: |
+          bun run lint
+
+      - name: Typecheck
+        run: |
+          bun run typecheck
+
+      - name: Build
+        run: |
+          bun run build
+
+      - name: Configure npm auth
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+
+      - name: Run semantic-release (publish)
+        env:
+          # npm automation token; required by @semantic-release/npm or publish commands
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # Many npm tools read NODE_AUTH_TOKEN for publishing; expose both to be safe
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # GitHub token used by semantic-release plugins to create GitHub Releases, push tags, etc.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Decide whether to run in dry-run mode based on the workflow_dispatch input `dry_run`.
+          # When triggered via workflow_dispatch, users can set the `dry_run` input to true to
+          # exercise the release process without actually publishing or pushing tags.
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            echo "Dry run requested — running semantic-release --dry-run"
+            bunx semantic-release --dry-run
+          else
+            echo "Running semantic-release (publish)"
+            bunx semantic-release
+          fi
