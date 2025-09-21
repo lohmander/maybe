@@ -1,13 +1,27 @@
 {
   "name": "@lohmander/maybe",
-  "module": "src/index.ts",
+  "version": "0.0.0",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "type": "module",
+  "files": [
+    "build"
+  ],
   "scripts": {
     "lint": "eslint \"src/**/*.{ts,tsx,js,jsx}\" --ignore-pattern \"**/*.test.*\" --ignore-pattern \"**/*.spec.*\" --ignore-pattern \"**/__tests__/**\" --fix",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.build.json --emitDeclarationOnly --declaration --declarationMap",
+    "prepare": "npm run build",
     "release": "semantic-release",
     "release:dry": "semantic-release --dry-run"
   },
