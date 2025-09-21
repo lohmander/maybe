@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/lohmander/maybe/compare/v1.0.0...v1.0.1) (2025-09-21)
+
+
+### Bug Fixes
+
+* Fix readme ([a730c60](https://github.com/lohmander/maybe/commit/a730c60853552955150092229c59ec8869a1b68a))
+
 # 1.0.0 (2025-09-21)
 
 
