@@ -25,12 +25,12 @@ function getUserActivity(id: string) {
   return AsyncMaybe.fromPromise(user)
     .assign({
       posts: (u) =>
-        Maybe(u)
+        Maybe.fromNullable(u)
           .filter((u) => u.isAuthor)
           .flatMap((u) => AsyncMaybe.fromPromise(getPosts(u.id)))
           .withDefault([]),
       comments: (u) =>
-        Maybe(u)
+        Maybe.fromNullable(u)
           .flatMap((u) => AsyncMaybe.fromPromise(getComments(u.id)))
           .withDefault([]),
     })
