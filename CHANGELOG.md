@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/lohmander/maybe/compare/v1.0.1...v1.0.2) (2025-09-21)
+
+
+### Bug Fixes
+
+* Update release configuration for npm and git assets ([a94a098](https://github.com/lohmander/maybe/commit/a94a09806a320ede2d09798d41aa62d1d38406d3))
+
 ## [1.0.1](https://github.com/lohmander/maybe/compare/v1.0.0...v1.0.1) (2025-09-21)
 
 
