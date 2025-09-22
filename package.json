@@ -1,26 +1,22 @@
 {
   "name": "@lohmander/maybe",
   "version": "1.0.2",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/index.js",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs"
     }
   },
   "type": "module",
   "files": [
-    "build"
+    "dist"
   ],
   "scripts": {
     "lint": "eslint \"src/**/*.{ts,tsx,js,jsx}\" --ignore-pattern \"**/*.test.*\" --ignore-pattern \"**/*.spec.*\" --ignore-pattern \"**/__tests__/**\" --fix",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
-    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.build.json --emitDeclarationOnly --declaration --declarationMap",
+    "build": "tsup src/index.ts --format cjs,esm --dts --sourcemap --outDir dist --clean",
     "prepare": "npm run build",
     "release": "semantic-release",
     "release:dry": "semantic-release --dry-run"
@@ -44,5 +40,8 @@
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "tsup": "^8.5.0"
   }
 }
