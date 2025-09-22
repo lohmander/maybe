@@ -1,3 +1,11 @@
+## [1.0.3](https://github.com/lohmander/maybe/compare/v1.0.2...v1.0.3) (2025-09-22)
+
+
+### Bug Fixes
+
+* **ci:** Use tsup to build files ([7325917](https://github.com/lohmander/maybe/commit/732591712f7c3d660faed0c8f0854aab3b062d20))
+* remove dist files ([51274ca](https://github.com/lohmander/maybe/commit/51274ca191bf1eafb4c8b4304613243430c92df3))
+
 ## [1.0.2](https://github.com/lohmander/maybe/compare/v1.0.1...v1.0.2) (2025-09-21)
 
 
