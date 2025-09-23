@@ -100,13 +100,13 @@ describe("AsyncMaybe", () => {
     });
 
     it("short circuits if Nothing", async () => {
-      // @ts-expect-error
+      // @ts-expect-error: testing null case
       const m = AsyncMaybe.fromPromise<number[] | null>(Promise.resolve(null)).filterMap((x) =>
         Maybe.fromNullable(x * 10),
       );
       expect(await m.value()).toBeNull();
 
-      // @ts-expect-error
+      // @ts-expect-error: testing undefined case
       const m2 = AsyncMaybe.fromPromise<number[] | undefined>(Promise.resolve(undefined)).filterMap(
         (x) => Maybe.fromNullable(x * 10),
       );
@@ -114,7 +114,7 @@ describe("AsyncMaybe", () => {
     });
 
     it("returns null if the value is not an array", async () => {
-      // @ts-expect-error
+      // @ts-expect-error: testing non-array case
       const m = AsyncMaybe.fromPromise(Promise.resolve(123)).filterMap((x) =>
         Maybe.fromNullable(x),
       );
@@ -132,7 +132,7 @@ describe("AsyncMaybe", () => {
 
     it("short circuits if the value is not an object", async () => {
       const m = AsyncMaybe.fromPromise(Promise.resolve(5)).extend("greet", (o) =>
-        // @ts-expect-error
+        // @ts-expect-error: testing non-object case
         AsyncMaybe.fromNullable(`Hello ${o.num}`),
       );
       expect(await m.value()).toBeNull();
@@ -140,7 +140,7 @@ describe("AsyncMaybe", () => {
 
     it("does not confuse null for an object", async () => {
       const m = AsyncMaybe.fromPromise(Promise.resolve(null)).extend("greet", (o) =>
-        // @ts-expect-error
+        // @ts-expect-error: testing null case
         AsyncMaybe.fromNullable(`Hello ${o.num}`),
       );
       expect(await m.value()).toBeNull();
@@ -155,7 +155,7 @@ describe("AsyncMaybe", () => {
 
     it("short circuits if the function returns Nothing", async () => {
       const m = AsyncMaybe.fromPromise(Promise.resolve({ num: 2 }))
-        .extend("greet", (o) => AsyncMaybe.fromNullable<string>(null))
+        .extend("greet", () => AsyncMaybe.fromNullable<string>(null))
         .map((obj) => `${obj.greet} stranger!`);
       expect(await m.value()).toBeNull();
     });
@@ -257,6 +257,43 @@ describe("AsyncMaybe", () => {
         .map((u) => u.profile + "!");
 
       expect(await result.value()).toBe("DIANA!");
+    });
+  });
+
+  describe("first", () => {
+    it("returns the first Just value from an array", async () => {
+      const m = AsyncMaybe.fromNullable(1);
+      const first = m.first((value) => [
+        AsyncMaybe.fromNullable(null),
+        AsyncMaybe.fromNullable(2),
+        AsyncMaybe.fromNullable(value + 10),
+      ]);
+      expect(await first.value()).toBe(2);
+    });
+
+    it("returns Nothing if all are Nothing", async () => {
+      const m = AsyncMaybe.fromNullable(1);
+      const first = m.first(() => [
+        AsyncMaybe.fromNullable<number | null>(null),
+        AsyncMaybe.fromNullable<number | undefined>(undefined),
+      ]);
+      expect(await first.value()).toBeNull();
+    });
+
+    it("short circuits if the original is Nothing", async () => {
+      const m = AsyncMaybe.fromNullable<number>(null);
+      const first = m.first(() => [AsyncMaybe.fromNullable(2), AsyncMaybe.fromNullable(3)]);
+      expect(await first.value()).toBeNull();
+    });
+
+    it("handles both AsyncMaybe and Maybe values", async () => {
+      const m = AsyncMaybe.fromNullable(5);
+      const first = m.first((value) => [
+        Maybe.fromNullable<number>(null),
+        AsyncMaybe.fromPromise(Promise.resolve(value * 2)),
+        Maybe.fromNullable(value + 3),
+      ]);
+      expect(await first.value()).toBe(10);
     });
   });
 

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { ReturnMaybeType } from "./types";
+import type { ExtractMaybeArrayValue, ReturnMaybeType } from "./types";
 import { isJust, isNothing } from "./utils";
 
 /**
@@ -177,6 +177,28 @@ export class Maybe<T> {
     }
 
     return new Maybe(result);
+  }
+
+  /**
+   * Returns the first Maybe to produce a non-Nothing value
+   *
+   * @typeParam U - The element type of the resulting Maybe.
+   * @param fn - A function mapping the contained value to an array of Maybes.
+   * @returns The first Maybe<U> from the array, or Nothing if none found or if this is Nothing.
+   */
+  first<Us extends ReadonlyArray<Maybe<any>>>(
+    fn: (value: T) => Us,
+  ): Maybe<ExtractMaybeArrayValue<Us>> {
+    if (isNothing(this._value)) return new Maybe<ExtractMaybeArrayValue<Us>>(null);
+
+    const maybes = fn(this._value as T);
+
+    for (const m of maybes) {
+      if (!(m instanceof Maybe)) return new Maybe<ExtractMaybeArrayValue<Us>>(null);
+      if (isJust(m.value())) return m;
+    }
+
+    return new Maybe<ExtractMaybeArrayValue<Us>>(null);
   }
 
   /**

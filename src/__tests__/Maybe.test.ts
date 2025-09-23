@@ -119,7 +119,7 @@ describe("Maybe", () => {
 
     it("short circuits if the `Just` value is not an object", () => {
       const result = Maybe.fromNullable(5)
-        // @ts-expect-error
+        // @ts-expect-error: should error because 5 is not an object
         .extend("greet", (o) => Maybe.fromNullable(`Hello ${o.num}`))
         .value();
 
@@ -224,7 +224,7 @@ describe("Maybe", () => {
     it("fails if the result of the filterMap callback does not return a Maybe instance", () => {
       const arr = [{ greet: "a" }, { greet: "b" }];
       const maybeArr = Maybe.fromNullable(arr)
-        // @ts-expect-error
+        // @ts-expect-error: should error because the callback does not return a Maybe
         .filterMap((x) => x.greet) // Incorrect: should return Maybe
         .value();
 
@@ -234,6 +234,7 @@ describe("Maybe", () => {
 
   describe("effect", () => {
     it("calls a function with the value and ignores its result", () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const effectFn = mock((x: number) => {});
       const result = Maybe.fromNullable(10)
         .effect(effectFn)
@@ -246,11 +247,43 @@ describe("Maybe", () => {
     });
 
     it("does not call a function when the value is Nothing", () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const effectFn = mock((x: number) => {});
       const result = Maybe.fromNullable<number>(null).effect(effectFn).value();
 
       expect(result).toBeNull();
       expect(effectFn).toHaveBeenCalledTimes(0);
+    });
+  });
+
+  describe("first", () => {
+    it("returns the first Just value from an array of Maybes", () => {
+      const maybe = Maybe.fromNullable(1);
+      const first = maybe
+        .first((value) => [
+          Maybe.fromNullable(null as null | boolean),
+          Maybe.fromNullable(value * 3),
+          Maybe.fromNullable("test"),
+        ])
+        .value();
+      expect(first).toBe(3);
+    });
+
+    it("returns Nothing if all Maybes are Nothing", () => {
+      const maybe = Maybe.fromNullable(1);
+      const first = maybe
+        .first(() => [
+          Maybe.fromNullable(null as null | boolean),
+          Maybe.fromNullable(undefined as undefined | number),
+        ])
+        .value();
+      expect(first).toBeNull();
+    });
+
+    it("short circuits if the original Maybe is Nothing", () => {
+      const maybe = Maybe.fromNullable<number>(null);
+      const first = maybe.first(() => [Maybe.fromNullable(1), Maybe.fromNullable(2)]).value();
+      expect(first).toBeNull();
     });
   });
 

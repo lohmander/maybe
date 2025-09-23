@@ -12,3 +12,7 @@ export type ExtractValue<M> =
         : never;
 
 export type ReturnMaybeType<Fn extends (...args: any[]) => any> = ExtractValue<ReturnType<Fn>>;
+
+export type AnyMaybe<T> = Maybe<T> | AsyncMaybe<T>;
+export type ExtractMaybeArrayValue<M extends ReadonlyArray<Maybe<any> | AsyncMaybe<any>>> =
+  M[number] extends AnyMaybe<infer T> ? T : never;

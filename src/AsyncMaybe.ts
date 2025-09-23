@@ -1,5 +1,5 @@
 import { Maybe } from "./Maybe";
-import type { ReturnMaybeType } from "./types";
+import type { ExtractMaybeArrayValue, ReturnMaybeType } from "./types";
 import { isJust, isNothing } from "./utils";
 
 /**
@@ -241,6 +241,28 @@ export class AsyncMaybe<T> {
       );
 
       return values.filter((v) => v != null) as V[];
+    })();
+
+    return new AsyncMaybe(next);
+  }
+
+  first<Us extends ReadonlyArray<AsyncMaybe<unknown> | Maybe<unknown>>>(
+    fn: (value: T) => Us,
+  ): AsyncMaybe<ExtractMaybeArrayValue<Us>> {
+    const next = (async () => {
+      const value = await this._value;
+
+      if (isNothing(value)) return value as unknown as ExtractMaybeArrayValue<Us>;
+
+      const maybes = fn(value);
+
+      for (const m of maybes) {
+        const maybeValue = await Promise.resolve(m.value());
+
+        if (isJust(maybeValue)) return maybeValue as ExtractMaybeArrayValue<Us>;
+      }
+
+      return null as unknown as ExtractMaybeArrayValue<Us>;
     })();
 
     return new AsyncMaybe(next);
