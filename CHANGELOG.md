@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/lohmander/maybe/compare/v1.0.3...v1.1.0) (2025-09-23)
+
+
+### Features
+
+* add `first` op to Maybe and MaybeAsync ([6a4c9de](https://github.com/lohmander/maybe/commit/6a4c9decbbd43e7019730d6efc2e3156e579ed73))
+
 ## [1.0.3](https://github.com/lohmander/maybe/compare/v1.0.2...v1.0.3) (2025-09-22)
 
 

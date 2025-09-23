@@ -1,5 +1,3 @@
-'use strict';
-
 // src/utils.ts
 function isNothing(value) {
   return value == null;
@@ -423,19 +421,6 @@ function effect(fn) {
   return ((m) => m.effect(fn));
 }
 
-exports.AsyncMaybe = AsyncMaybe;
-exports.Maybe = Maybe;
-exports.assign = assign;
-exports.effect = effect;
-exports.extend = extend;
-exports.filter = filter;
-exports.filterMap = filterMap;
-exports.flatMap = flatMap;
-exports.fromMaybe = fromMaybe;
-exports.fromNullable = fromNullable;
-exports.fromPromise = fromPromise;
-exports.getOrElse = getOrElse;
-exports.map = map;
-exports.withDefault = withDefault;
-//# sourceMappingURL=index.cjs.map
-//# sourceMappingURL=index.cjs.map
+export { AsyncMaybe, Maybe, assign, effect, extend, filter, filterMap, flatMap, fromMaybe, fromNullable, fromPromise, getOrElse, map, withDefault };
+//# sourceMappingURL=index.js.map
+//# sourceMappingURL=index.js.map
