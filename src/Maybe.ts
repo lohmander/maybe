@@ -12,7 +12,7 @@ import { isJust, isNothing } from "./utils";
  * Inspired by functional programming but designed for JS/TS ergonomics.
  */
 export class Maybe<T> {
-  private constructor(public readonly _value: T | null | undefined) {}
+  private constructor(public readonly _value: T | null | undefined) { }
 
   /**
    * Create a Maybe from a nullable value.
@@ -160,7 +160,7 @@ export class Maybe<T> {
    *
    * @typeParam U - The element type of the original array.
    * @typeParam V - The element type of the resulting array.
-   * @param fn - A function mapping each element to a Maybe.
+   * @param fn - A function mapping each element to a Maybe and its index.
    * @returns A Maybe of the filtered/mapped array, or Nothing if empty.
    */
   filterMap<U, V>(this: Maybe<U[]>, fn: (value: U, index: number) => Maybe<V>): Maybe<V[]> {
