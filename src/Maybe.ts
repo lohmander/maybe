@@ -163,17 +163,23 @@ export class Maybe<T> {
    * @param fn - A function mapping each element to a Maybe.
    * @returns A Maybe of the filtered/mapped array, or Nothing if empty.
    */
-  filterMap<U, V>(this: Maybe<U[]>, fn: (value: U) => Maybe<V>): Maybe<V[]> {
+  filterMap<U, V>(this: Maybe<U[]>, fn: (value: U, index: number) => Maybe<V>): Maybe<V[]> {
     if (isNothing(this._value)) return new Maybe<V[]>(null);
 
     const arr = this._value as U[];
     const result: V[] = [];
 
-    for (const el of arr) {
-      const maybeVal = fn(el);
+    for (let i = 0; i < arr.length; i++) {
+      const el = arr[i];
+      // arr[i] is typed as U | undefined due to noUncheckedIndexedAccess,
+      // but we know it exists because i < arr.length
+      if (el === undefined) continue;
+
+      const maybeVal = fn(el, i);
       if (!(maybeVal instanceof Maybe)) return Maybe.fromNullable<V[]>(null);
 
-      if (isJust(maybeVal.value())) result.push(maybeVal.value() as V);
+      const val = maybeVal.value();
+      if (isJust(val)) result.push(val as V);
     }
 
     return new Maybe(result);

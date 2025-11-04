@@ -130,6 +130,38 @@ describe("functional interface", () => {
       )(maybe);
       expect(filterMapped.value()).toBeNull();
     });
+
+    test("provides index parameter to the callback function (Maybe)", () => {
+      const maybe = fromNullable([10, 20, 30]);
+      const filterMapped = filterMap((x: number, index: number) =>
+        fromNullable(x + index),
+      )(maybe);
+      expect(filterMapped.value()).toEqual([10, 21, 32]);
+    });
+
+    test("uses index to filter elements (Maybe)", () => {
+      const maybe = fromNullable(["a", "b", "c", "d"]);
+      const filterMapped = filterMap((x: string, index: number) =>
+        index % 2 === 0 ? fromNullable(x) : fromNullable(null),
+      )(maybe);
+      expect(filterMapped.value()).toEqual(["a", "c"]);
+    });
+
+    test("provides index parameter to the callback function (AsyncMaybe)", async () => {
+      const asyncMaybe = fromPromise(Promise.resolve([10, 20, 30]));
+      const filterMapped = filterMap((x: number, index: number) =>
+        fromNullable(x + index),
+      )(asyncMaybe);
+      expect(await filterMapped.value()).toEqual([10, 21, 32]);
+    });
+
+    test("uses index to filter elements (AsyncMaybe)", async () => {
+      const asyncMaybe = fromPromise(Promise.resolve(["a", "b", "c", "d"]));
+      const filterMapped = filterMap((x: string, index: number) =>
+        index % 2 === 0 ? fromNullable(x) : fromNullable(null),
+      )(asyncMaybe);
+      expect(await filterMapped.value()).toEqual(["a", "c"]);
+    });
   });
 
   describe("extend", () => {

@@ -230,6 +230,24 @@ describe("Maybe", () => {
 
       expect(maybeArr).toBeNull();
     });
+
+    it("provides index parameter to the callback function", () => {
+      const arr = [10, 20, 30];
+      const maybeArr = Maybe.fromNullable(arr)
+        .filterMap((x, index) => Maybe.fromNullable(x + index))
+        .value();
+
+      expect(maybeArr).toEqual([10, 21, 32]);
+    });
+
+    it("uses index to filter elements", () => {
+      const arr = ["a", "b", "c", "d"];
+      const maybeArr = Maybe.fromNullable(arr)
+        .filterMap((x, index) => (index % 2 === 0 ? Maybe.fromNullable(x) : Maybe.fromNullable(null)))
+        .value();
+
+      expect(maybeArr).toEqual(["a", "c"]);
+    });
   });
 
   describe("effect", () => {

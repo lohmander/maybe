@@ -67,20 +67,20 @@ export function filter<A>(predicate: (value: A) => boolean): {
 
 /* filterMap */
 export function filterMap<A, B>(
-  fn: (value: A) => Maybe<B>,
+  fn: (value: A, index: number) => Maybe<B>,
 ): {
   <M extends Maybe<A[]> | AsyncMaybe<A[]>>(
     m: M,
   ): M extends AsyncMaybe<A[]> ? AsyncMaybe<B[]> : Maybe<B[]>;
 };
 export function filterMap<A, B>(
-  fn: (value: A) => AsyncMaybe<B>,
+  fn: (value: A, index: number) => AsyncMaybe<B>,
 ): {
   (m: Maybe<A[]>): AsyncMaybe<B[]>;
   (m: AsyncMaybe<A[]>): AsyncMaybe<B[]>;
 };
 export function filterMap<A, B>(
-  fn: (value: A) => Maybe<B> | AsyncMaybe<B>,
+  fn: (value: A, index: number) => Maybe<B> | AsyncMaybe<B>,
 ): (m: any) => Maybe<B[]> | AsyncMaybe<B[]> {
   return ((m: any) => (m as any).filterMap(fn as any)) as any;
 }

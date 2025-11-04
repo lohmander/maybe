@@ -114,7 +114,7 @@ declare class AsyncMaybe<T> {
      * @param fn - A function returning a Maybe/AsyncMaybe/value for each element.
      * @returns A new AsyncMaybe containing the filtered/mapped array, or Nothing.
      */
-    filterMap<U, V>(this: AsyncMaybe<U[]>, fn: (value: U) => Maybe<V> | AsyncMaybe<V> | V | Promise<Maybe<V> | AsyncMaybe<V> | V>): AsyncMaybe<V[]>;
+    filterMap<U, V>(this: AsyncMaybe<U[]>, fn: (value: U, index: number) => Maybe<V> | AsyncMaybe<V> | V | Promise<Maybe<V> | AsyncMaybe<V> | V>): AsyncMaybe<V[]>;
     first<Us extends ReadonlyArray<AsyncMaybe<unknown> | Maybe<unknown>>>(fn: (value: T) => Us): AsyncMaybe<ExtractMaybeArrayValue<Us>>;
     /**
      * withDefault - Provides a default value if Nothing.
@@ -265,7 +265,7 @@ declare class Maybe<T> {
      * @param fn - A function mapping each element to a Maybe.
      * @returns A Maybe of the filtered/mapped array, or Nothing if empty.
      */
-    filterMap<U, V>(this: Maybe<U[]>, fn: (value: U) => Maybe<V>): Maybe<V[]>;
+    filterMap<U, V>(this: Maybe<U[]>, fn: (value: U, index: number) => Maybe<V>): Maybe<V[]>;
     /**
      * Returns the first Maybe to produce a non-Nothing value
      *
@@ -316,10 +316,10 @@ declare function filter<A>(predicate: (value: A) => boolean): {
     (m: Maybe<A>): Maybe<A>;
     (m: AsyncMaybe<A>): AsyncMaybe<A>;
 };
-declare function filterMap<A, B>(fn: (value: A) => Maybe<B>): {
+declare function filterMap<A, B>(fn: (value: A, index: number) => Maybe<B>): {
     <M extends Maybe<A[]> | AsyncMaybe<A[]>>(m: M): M extends AsyncMaybe<A[]> ? AsyncMaybe<B[]> : Maybe<B[]>;
 };
-declare function filterMap<A, B>(fn: (value: A) => AsyncMaybe<B>): {
+declare function filterMap<A, B>(fn: (value: A, index: number) => AsyncMaybe<B>): {
     (m: Maybe<A[]>): AsyncMaybe<B[]>;
     (m: AsyncMaybe<A[]>): AsyncMaybe<B[]>;
 };
