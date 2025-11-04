@@ -220,7 +220,10 @@ export class AsyncMaybe<T> {
    */
   filterMap<U, V>(
     this: AsyncMaybe<U[]>,
-    fn: (value: U) => Maybe<V> | AsyncMaybe<V> | V | Promise<Maybe<V> | AsyncMaybe<V> | V>,
+    fn: (
+      value: U,
+      index: number,
+    ) => Maybe<V> | AsyncMaybe<V> | V | Promise<Maybe<V> | AsyncMaybe<V> | V>,
   ): AsyncMaybe<V[]> {
     const next = (async () => {
       const raw = await this._value;
@@ -232,8 +235,8 @@ export class AsyncMaybe<T> {
       if (!Array.isArray(raw)) return null;
 
       const values = await Promise.all(
-        (raw as U[]).map(async (el) => {
-          const out = await fn(el);
+        (raw as U[]).map(async (el, i) => {
+          const out = await fn(el, i);
           if (out instanceof AsyncMaybe) return await out.value();
           if (out instanceof Maybe) return out.value();
           return out as V;

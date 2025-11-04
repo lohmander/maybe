@@ -122,10 +122,13 @@ var Maybe = class _Maybe {
     if (isNothing(this._value)) return new _Maybe(null);
     const arr = this._value;
     const result = [];
-    for (const el of arr) {
-      const maybeVal = fn(el);
+    for (let i = 0; i < arr.length; i++) {
+      const el = arr[i];
+      if (el === void 0) continue;
+      const maybeVal = fn(el, i);
       if (!(maybeVal instanceof _Maybe)) return _Maybe.fromNullable(null);
-      if (isJust(maybeVal.value())) result.push(maybeVal.value());
+      const val = maybeVal.value();
+      if (isJust(val)) result.push(val);
     }
     return new _Maybe(result);
   }
@@ -313,8 +316,8 @@ var AsyncMaybe = class _AsyncMaybe {
       if (raw == null) return raw;
       if (!Array.isArray(raw)) return null;
       const values = await Promise.all(
-        raw.map(async (el) => {
-          const out = await fn(el);
+        raw.map(async (el, i) => {
+          const out = await fn(el, i);
           if (out instanceof _AsyncMaybe) return await out.value();
           if (out instanceof Maybe) return out.value();
           return out;

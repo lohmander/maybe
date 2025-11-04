@@ -120,6 +120,20 @@ describe("AsyncMaybe", () => {
       );
       expect(await m.value()).toBeNull();
     });
+
+    it("provides index parameter to the callback function", async () => {
+      const m = AsyncMaybe.fromPromise(Promise.resolve([10, 20, 30])).filterMap((x, index) =>
+        Maybe.fromNullable(x + index),
+      );
+      expect(await m.value()).toEqual([10, 21, 32]);
+    });
+
+    it("uses index to filter elements", async () => {
+      const m = AsyncMaybe.fromPromise(Promise.resolve(["a", "b", "c", "d"])).filterMap(
+        (x, index) => (index % 2 === 0 ? Maybe.fromNullable(x) : Maybe.fromNullable(null)),
+      );
+      expect(await m.value()).toEqual(["a", "c"]);
+    });
   });
 
   describe("extend", () => {
