@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/lohmander/maybe/compare/v1.1.0...v1.1.1) (2025-11-04)
+
+
+### Bug Fixes
+
+* missing filterMap index and docs ([469d5f2](https://github.com/lohmander/maybe/commit/469d5f26ce5da87344aa73db21c907ab7dab1a72))
+
 # [1.1.0](https://github.com/lohmander/maybe/compare/v1.0.3...v1.1.0) (2025-09-23)
 
 

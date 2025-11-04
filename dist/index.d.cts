@@ -111,7 +111,7 @@ declare class AsyncMaybe<T> {
      *
      * @typeParam U - The element type of the source array.
      * @typeParam V - The element type of the result array.
-     * @param fn - A function returning a Maybe/AsyncMaybe/value for each element.
+     * @param fn - A function returning a Maybe/AsyncMaybe/value for each element and its index.
      * @returns A new AsyncMaybe containing the filtered/mapped array, or Nothing.
      */
     filterMap<U, V>(this: AsyncMaybe<U[]>, fn: (value: U, index: number) => Maybe<V> | AsyncMaybe<V> | V | Promise<Maybe<V> | AsyncMaybe<V> | V>): AsyncMaybe<V[]>;
@@ -262,7 +262,7 @@ declare class Maybe<T> {
      *
      * @typeParam U - The element type of the original array.
      * @typeParam V - The element type of the resulting array.
-     * @param fn - A function mapping each element to a Maybe.
+     * @param fn - A function mapping each element to a Maybe and its index.
      * @returns A Maybe of the filtered/mapped array, or Nothing if empty.
      */
     filterMap<U, V>(this: Maybe<U[]>, fn: (value: U, index: number) => Maybe<V>): Maybe<V[]>;
